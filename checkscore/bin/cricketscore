@@ -1,8 +1,7 @@
 #!/usr/bin/python
 from bs4 import BeautifulSoup
 import requests
-import notify2
-import time
+import subprocess
 import sys
 
 url = "http://www.espncricinfo.com/ci/engine/match/1034809.html"
@@ -16,32 +15,23 @@ while True:
 
     try:
         def send_notification():
-            notify2.init('app')
             with open(filename,'r') as f:
                 cric_sum = f.readline()
-            n = notify2.Notification(cric_sum)
-            n.show()
-            n.close()
+            subprocess.Popen(["notify-send", cric_sum], stdout=subprocess.PIPE)
 
 
         for i in soup.find_all('title'):
             info = i.get_text()
-            new_info = str(info)
+            new_info = info
             info_dict['new_info'] = new_info
             if info_dict['new_info'] != info_dict['old_info']:
                 with open(filename, 'wb') as f:
-                    f.write(new_info.strip())
+                    f.write(new_info)
                 info_dict['old_info'] = info_dict['new_info']
                 send_notification()
-        time.sleep(10)
-
-
 
     except KeyboardInterrupt:
-        notify2.init('app')
-        n = notify2.Notification("Some error occurred, python application stopped!")
-        n.show()
-        n.close()
+        subprocess.Popen(["notify-send", "Some error occurred, python application stopped!" ], stdout=subprocess.PIPE)
         sys.exit(0)
 
 

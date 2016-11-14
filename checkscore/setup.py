@@ -7,5 +7,5 @@ setup(
     description='A simple tool to crawl latest cricket score and show notification for the same',
     author='Rajat Bhardwaj',
     author_email='bhardwaj.rajat18@gmail.com',
-    install_requires=['notify2', 'requests', 'bs4']
+    install_requires=['requests', 'bs4']
 )
