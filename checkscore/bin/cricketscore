@@ -2,36 +2,42 @@
 from bs4 import BeautifulSoup
 import requests
 import subprocess
-import sys
 
-url = "http://www.espncricinfo.com/ci/engine/match/1034809.html"
-filename = "cricket_summary.txt"
+base_url = "http://www.espncricinfo.com"
+filename = "./cricket_summary.txt"
 info_dict = {'old_info': ""}
 
+
+def send_notification():
+    with open(filename, 'r') as score_file_r:
+        cric_sum = str(score_file_r.readline())
+    print "cricket score summary: " + cric_sum
+    subprocess.Popen(["notify-send", cric_sum], stdout=subprocess.PIPE)
+
+
+def parse_score(urls):
+    for i_url in urls:
+        info_dict['url'] = str(i_url['href'])
+    target_r = requests.get(base_url + info_dict['url'])
+    target_data = target_r.text
+    target_soup = BeautifulSoup(target_data, "html.parser")
+    return target_soup
+
+
 while True:
-    r = requests.get(url)
-    data = r.text
-    soup = BeautifulSoup(data, "html.parser")
+    base_r = requests.get(base_url)
+    base_data = base_r.text
+    base_soup = BeautifulSoup(base_data, "html.parser")
+    score_cards = base_soup.find_all("li", class_='espni-livescores-scoreline')
+    urls = score_cards[0].find_all('a')
+    target_soup = parse_score(urls)
 
-    try:
-        def send_notification():
-            with open(filename,'r') as f:
-                cric_sum = f.readline()
-            subprocess.Popen(["notify-send", cric_sum], stdout=subprocess.PIPE)
-
-
-        for i in soup.find_all('title'):
-            info = i.get_text()
-            new_info = info
-            info_dict['new_info'] = new_info
-            if info_dict['new_info'] != info_dict['old_info']:
-                with open(filename, 'wb') as f:
-                    f.write(new_info)
-                info_dict['old_info'] = info_dict['new_info']
-                send_notification()
-
-    except KeyboardInterrupt:
-        subprocess.Popen(["notify-send", "Some error occurred, python application stopped!" ], stdout=subprocess.PIPE)
-        sys.exit(0)
-
-
+    for i in target_soup.find_all('title'):
+        info = i.get_text()
+        new_info = info
+        info_dict['new_info'] = new_info
+        if info_dict['new_info'] != info_dict['old_info']:
+            with open(filename, 'wb') as score_file_w:
+                score_file_w.write(new_info)
+            info_dict['old_info'] = info_dict['new_info']
+            send_notification()
