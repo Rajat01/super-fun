@@ -2,10 +2,11 @@
 from bs4 import BeautifulSoup
 import requests
 import subprocess
+import time
 
 base_url = "http://www.espncricinfo.com"
 filename = "./cricket_summary.txt"
-info_dict = {'old_info': ""}
+info_dict = {'old_info': "ENG 239/3 (80.0 ov, MM Ali 86*, JM Bairstow 44*, KK Nair 0/4) | Live Scorecard | ESPN Cricinfo"}
 
 
 def send_notification(cric_summary):
@@ -37,15 +38,21 @@ while True:
 
     for i in crawled_soup.find_all('title'):
         info = i.get_text()
-        new_info = info
-        info_dict['new_info'] = new_info
-        if info_dict['new_info'] != info_dict['old_info']:
+        info_dict['new_info'] = info
+        split_string_old = str(info_dict['old_info'].split('('))
+        split_string_new = str(info_dict['new_info'].split('('))
+        old_overs = str(split_string_old.split(" ")[3])
+        new_overs = str(split_string_new.split(" ")[3])
+        try:
+            old_overs_final = float(old_overs.replace("'", ""))
+        except:
+            old_overs_final = float(old_overs.replace("u'", ""))
+        new_overs_final = float(new_overs.replace("u'", ""))
+        if info_dict['new_info'] != info_dict['old_info'] and new_overs_final > old_overs_final:
             with open(filename, 'wb') as score_file_w:
-                score_file_w.write(new_info)
+                score_file_w.write(info)
             info_dict['old_info'] = info_dict['new_info']
             with open(filename, 'r') as score_file_r:
                 cric_sum = str(score_file_r.readline())
-            print "cricket score summary: " + cric_sum
-            notification_status = send_notification(cric_sum)
-            print notification_status
+            send_notification(cric_sum)
 
